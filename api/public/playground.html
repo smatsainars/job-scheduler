@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Scheduler GraphQL Playground</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="3" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .playground {
+            display: flex;
+            height: 70vh;
+            min-height: 500px;
+        }
+        
+        .query-panel, .result-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .query-panel {
+            border-right: 2px solid #ecf0f1;
+        }
+        
+        .panel-header {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .result-panel .panel-header {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        }
+        
+        textarea {
+            flex: 1;
+            border: none;
+            padding: 20px;
+            font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            background: #fafbfc;
+            color: #2c3e50;
+        }
+        
+        textarea:focus {
+            background: #ffffff;
+            box-shadow: inset 0 0 0 2px #3498db;
+        }
+        
+        .result-area {
+            flex: 1;
+            padding: 20px;
+            font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            background: #f8f9fa;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: none;
+            outline: none;
+        }
+        
+        .controls {
+            padding: 20px;
+            background: #ecf0f1;
+            border-top: 2px solid #bdc3c7;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .clear-btn {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
+        
+        .clear-btn:hover {
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+        }
+        
+        .format-btn {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+        }
+        
+        .format-btn:hover {
+            box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4);
+        }
+        
+        .examples {
+            padding: 20px;
+            background: linear-gradient(135deg, #ecf0f1 0%, #d5dbdb 100%);
+            border-top: 2px solid #bdc3c7;
+        }
+        
+        .examples h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.2em;
+        }
+        
+        .example-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .example-btn {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 6px;
+            box-shadow: 0 3px 8px rgba(39, 174, 96, 0.3);
+        }
+        
+        .example-btn:hover {
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-loading {
+            background: #f39c12;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-error {
+            background: #e74c3c;
+        }
+        
+        .status-success {
+            background: #27ae60;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .loading {
+            color: #f39c12;
+        }
+        
+        .error {
+            color: #e74c3c;
+        }
+        
+        .success {
+            color: #27ae60;
+        }
+        
+        .keyboard-hint {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            font-size: 12px;
+            opacity: 0.7;
+            background: rgba(0,0,0,0.1);
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        
+        @media (max-width: 768px) {
+            .playground {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .query-panel {
+                border-right: none;
+                border-bottom: 2px solid #ecf0f1;
+            }
+            
+            textarea, .result-area {
+                min-height: 200px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .example-buttons {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Job Scheduler GraphQL Playground</h1>
+            <p>Test your GraphQL queries and mutations with real-time execution</p>
+            <div class="keyboard-hint">💡 Press Ctrl+Enter to execute</div>
+        </div>
+        
+        <div class="playground">
+            <div class="query-panel">
+                <div class="panel-header">
+                    <span>📝</span> GraphQL Query Editor
+                </div>
+                <textarea id="queryInput" placeholder="Enter your GraphQL query here...
+
+Example:
+query GetUpcomingEvents {
+  upcomingEvents {
+    id
+    title
+    startTime
+    status
+    priority
+    participants {
+      user {
+        fullName
+      }
+      role
+    }
+  }
+}">query GetUpcomingEvents {
+  upcomingEvents {
+    id
+    title
+    description
+    startTime
+    endTime
+    status
+    priority
+    location
+    lunchProvided
+    participantsCount
+    participants {
+      id
+      role
+      status
+      user {
+        fullName
+        email
+      }
+    }
+  }
+}</textarea>
+            </div>
+            
+            <div class="result-panel">
+                <div class="panel-header">
+                    <span id="statusIndicator" class="status-indicator"></span>
+                    <span>📋</span> Execution Result
+                </div>
+                <div id="resultArea" class="result-area">Click "Execute Query" to run your GraphQL query and see the results here...
+
+Your API will return JSON data with events, users, and participants information.</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="executeBtn" onclick="executeQuery()">
+                ▶️ Execute Query
+            </button>
+            <button class="clear-btn" onclick="clearQuery()">
+                🗑️ Clear
+            </button>
+            <button class="format-btn" onclick="formatQuery()">
+                ✨ Format
+            </button>
+        </div>
+        
+        <div class="examples">
+            <h3>📚 Example Queries & Mutations</h3>
+            <div class="example-buttons">
+                <button class="example-btn" onclick="loadExample('upcomingEvents')">📅 Upcoming Events</button>
+                <button class="example-btn" onclick="loadExample('allUsers')">👥 All Users</button>
+                <button class="example-btn" onclick="loadExample('createEvent')">➕ Create Event</button>
+                <button class="example-btn" onclick="loadExample('joinEvent')">🤝 Join Event</button>
+                <button class="example-btn" onclick="loadExample('checkIn')">⏰ Check In</button>
+                <button class="example-btn" onclick="loadExample('myParticipations')">📋 My Participations</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const examples = {
+            upcomingEvents: `query GetUpcomingEvents {
+  upcomingEvents {
+    id
+    title
+    description
+    startTime
+    endTime
+    status
+    priority
+    location
+    lunchProvided
+    participantsCount
+    isCompleted
+    isInProgress
+    participants {
+      id
+      role
+      status
+      user {
+        fullName
+        email
+      }
+      canCreateEvents
+      canAssignWorkers
+    }
+  }
+}`,
+            allUsers: `query GetAllUsers {
+  users {
+    id
+    fullName
+    email
+    firstName
+    lastName
+    isActive
+    createdAt
+    eventParticipations {
+      id
+      role
+      status
+      event {
+        title
+        startTime
+        status
+      }
+    }
+  }
+}`,
+            createEvent: `mutation CreateNewEvent {
+  createEvent(input: {
+    title: "Team Building Workshop"
+    description: "Monthly team building activity with lunch"
+    startTime: "2025-01-15T09:00:00"
+    endTime: "2025-01-15T17:00:00"
+    priority: MEDIUM
+    location: "Conference Room A"
+    lunchProvided: true
+    estimatedDurationMinutes: 480
+  }) {
+    id
+    title
+    startTime
+    endTime
+    status
+    priority
+    location
+    lunchProvided
+    participants {
+      user {
+        fullName
+      }
+      role
+      status
+    }
+  }
+}`,
+            joinEvent: `mutation JoinWorkEvent {
+  joinEvent(eventId: "1") {
+    id
+    role
+    status
+    user {
+      fullName
+      email
+    }
+    event {
+      title
+      startTime
+      location
+    }
+    canSignUpForWork
+    canTrackAttendance
+  }
+}`,
+            checkIn: `mutation CheckInToWork {
+  checkIn(eventId: "1") {
+    id
+    checkInTime
+    isCurrentlyWorking
+    user {
+      fullName
+    }
+    event {
+      title
+      location
+    }
+  }
+}`,
+            myParticipations: `query GetMyParticipations {
+  myParticipations {
+    id
+    role
+    status
+    checkInTime
+    checkOutTime
+    workedMinutes
+    isCurrentlyWorking
+    event {
+      id
+      title
+      startTime
+      endTime
+      status
+      location
+      lunchProvided
+    }
+    canCreateEvents
+    canAssignWorkers
+    canTrackAttendance
+  }
+}`
+        };
+
+        function loadExample(exampleName) {
+            document.getElementById('queryInput').value = examples[exampleName];
+            updateStatus('ready', 'Example loaded! Click Execute to run the query.');
+        }
+
+        function clearQuery() {
+            document.getElementById('queryInput').value = '';
+            document.getElementById('resultArea').textContent = 'Query cleared. Enter a new GraphQL query above and click Execute.';
+            updateStatus('ready', 'Ready to execute a new query.');
+        }
+
+        function formatQuery() {
+            const queryInput = document.getElementById('queryInput');
+            const query = queryInput.value;
+            
+            // Simple GraphQL formatting
+            let formatted = query
+                .replace(/\{/g, ' {\n  ')
+                .replace(/\}/g, '\n}')
+                .replace(/,/g, ',\n  ')
+                .replace(/\n\s*\n/g, '\n')
+                .trim();
+            
+            // Fix indentation
+            const lines = formatted.split('\n');
+            let indent = 0;
+            const indentSize = 2;
+            
+            const formattedLines = lines.map(line => {
+                const trimmed = line.trim();
+                if (trimmed.includes('}')) indent -= indentSize;
+                const result = ' '.repeat(Math.max(0, indent)) + trimmed;
+                if (trimmed.includes('{')) indent += indentSize;
+                return result;
+            });
+            
+            queryInput.value = formattedLines.join('\n');
+            updateStatus('ready', 'Query formatted successfully!');
+        }
+
+        function updateStatus(type, message) {
+            const indicator = document.getElementById('statusIndicator');
+            const resultArea = document.getElementById('resultArea');
+            
+            indicator.className = `status-indicator status-${type}`;
+            
+            if (message) {
+                resultArea.textContent = message;
+                resultArea.className = `result-area ${type}`;
+            }
+        }
+
+        async function executeQuery() {
+            const query = document.getElementById('queryInput').value.trim();
+            const resultArea = document.getElementById('resultArea');
+            const executeBtn = document.getElementById('executeBtn');
+            
+            if (!query) {
+                updateStatus('error', 'Please enter a GraphQL query.');
+                return;
+            }
+
+            executeBtn.disabled = true;
+            executeBtn.textContent = '⏳ Executing...';
+            updateStatus('loading', 'Executing GraphQL query...');
+
+            try {
+                const response = await fetch('/graphql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        variables: {}
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.errors && result.errors.length > 0) {
+                    updateStatus('error');
+                    resultArea.textContent = JSON.stringify(result, null, 2);
+                    resultArea.className = 'result-area error';
+                } else {
+                    updateStatus('success');
+                    resultArea.textContent = JSON.stringify(result, null, 2);
+                    resultArea.className = 'result-area success';
+                }
+            } catch (error) {
+                updateStatus('error');
+                resultArea.textContent = `Network Error: ${error.message}\n\nMake sure your GraphQL API is running on http://localhost:8000/graphql`;
+                resultArea.className = 'result-area error';
+            } finally {
+                executeBtn.disabled = false;
+                executeBtn.textContent = '▶️ Execute Query';
+            }
+        }
+
+        // Keyboard shortcuts
+        document.getElementById('queryInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                executeQuery();
+            }
+            
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + '  ' + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 2;
+            }
+        });
+
+        // Auto-resize textarea
+        const textarea = document.getElementById('queryInput');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+
+        // Initialize with ready status
+        updateStatus('ready', 'Ready to execute GraphQL queries! Try one of the examples below or write your own.');
+    </script>
+</body>
+</html>

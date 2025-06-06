@@ -1,0 +1,212 @@
+type Query {
+    # User queries
+    me: User
+    users: [User!]!
+    user(id: ID!): User
+    
+    # Event queries
+    events(
+        status: EventStatus
+        priority: EventPriority
+        startDate: String
+        endDate: String
+        limit: Int
+        offset: Int
+    ): [Event!]!
+    event(id: ID!): Event
+    myEvents: [Event!]!
+    upcomingEvents: [Event!]!
+    
+    # Participant queries
+    eventParticipants(eventId: ID!): [EventParticipant!]!
+    myParticipations: [EventParticipant!]!
+}
+
+type Mutation {
+    # User mutations
+    updateProfile(input: UpdateProfileInput!): User!
+    
+    # Event mutations
+    createEvent(input: CreateEventInput!): Event!
+    updateEvent(id: ID!, input: UpdateEventInput!): Event!
+    deleteEvent(id: ID!): Boolean!
+    
+    # Participant mutations
+    assignParticipant(input: AssignParticipantInput!): EventParticipant!
+    updateParticipantRole(id: ID!, role: ParticipantRole!): EventParticipant!
+    updateParticipantStatus(id: ID!, status: ParticipantStatus!): EventParticipant!
+    removeParticipant(id: ID!): Boolean!
+    
+    # Self-service mutations
+    joinEvent(eventId: ID!): EventParticipant!
+    leaveEvent(eventId: ID!): Boolean!
+    respondToInvitation(participantId: ID!, status: ParticipantStatus!): EventParticipant!
+    
+    # Time tracking mutations
+    checkIn(eventId: ID!): EventParticipant!
+    checkOut(eventId: ID!): EventParticipant!
+    updateEventTimes(id: ID!, input: UpdateEventTimesInput!): Event!
+}
+
+# User Types
+type User {
+    id: ID!
+    email: String!
+    firstName: String!
+    lastName: String!
+    fullName: String!
+    profilePicture: String
+    isActive: Boolean!
+    createdAt: String!
+    updatedAt: String!
+    lastLoginAt: String
+    eventParticipations: [EventParticipant!]!
+}
+
+# Event Types
+type Event {
+    id: ID!
+    title: String!
+    description: String
+    startTime: String!
+    endTime: String
+    actualStartTime: String
+    actualEndTime: String
+    estimatedDurationMinutes: Int
+    scheduledDurationMinutes: Int
+    actualDurationMinutes: Int
+    workingDurationMinutes: Int
+    status: EventStatus!
+    priority: EventPriority!
+    location: String
+    lunchProvided: Boolean!
+    attendanceNotes: [String!]
+    metadata: JSON
+    isRecurring: Boolean!
+    recurringPattern: String
+    parentEventId: Int
+    createdAt: String!
+    updatedAt: String!
+    participants: [EventParticipant!]!
+    participantsCount: Int!
+    
+    # Computed fields
+    isCompleted: Boolean!
+    isCancelled: Boolean!
+    isInProgress: Boolean!
+    isPending: Boolean!
+}
+
+# EventParticipant Types
+type EventParticipant {
+    id: ID!
+    user: User!
+    event: Event!
+    role: ParticipantRole!
+    status: ParticipantStatus!
+    notes: String
+    respondedAt: String
+    checkInTime: String
+    checkOutTime: String
+    wasPresent: Boolean!
+    workedMinutes: Int
+    isCurrentlyWorking: Boolean!
+    createdAt: String!
+    updatedAt: String!
+    
+    # Permission checks
+    canCreateEvents: Boolean!
+    canAssignWorkers: Boolean!
+    canTrackAttendance: Boolean!
+    canSignUpForWork: Boolean!
+}
+
+# Enums
+enum EventStatus {
+    PENDING
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+}
+
+enum EventPriority {
+    LOW
+    MEDIUM
+    HIGH
+    URGENT
+}
+
+enum ParticipantRole {
+    ORGANIZER
+    COORDINATOR
+    SUPERVISOR
+    WORKER
+}
+
+enum ParticipantStatus {
+    INVITED
+    ACCEPTED
+    DECLINED
+    TENTATIVE
+}
+
+# Input Types
+input CreateEventInput {
+    title: String!
+    description: String
+    startTime: String!
+    endTime: String
+    estimatedDurationMinutes: Int
+    priority: EventPriority = MEDIUM
+    location: String
+    lunchProvided: Boolean = false
+    metadata: JSON
+    isRecurring: Boolean = false
+    recurringPattern: String
+    participantInputs: [ParticipantInput!]
+}
+
+input UpdateEventInput {
+    title: String
+    description: String
+    startTime: String
+    endTime: String
+    estimatedDurationMinutes: Int
+    status: EventStatus
+    priority: EventPriority
+    location: String
+    lunchProvided: Boolean
+    attendanceNotes: [String!]
+    metadata: JSON
+    isRecurring: Boolean
+    recurringPattern: String
+}
+
+input UpdateEventTimesInput {
+    actualStartTime: String
+    actualEndTime: String
+    lunchProvided: Boolean
+    attendanceNotes: [String!]
+}
+
+input AssignParticipantInput {
+    eventId: ID!
+    userId: ID!
+    role: ParticipantRole!
+    notes: String
+}
+
+input ParticipantInput {
+    userId: ID!
+    role: ParticipantRole!
+    notes: String
+}
+
+input UpdateProfileInput {
+    firstName: String
+    lastName: String
+    profilePicture: String
+}
+
+# Custom scalar for JSON
+scalar JSON
